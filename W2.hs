@@ -30,13 +30,15 @@ import Data.Char
 -- Ex 1: Define the constant years, that is a list of the values 1982,
 -- 2004 and 2012 in this order.
 
-years = undefined
+years :: [Integer]
+years = [1982, 2004, 2012]
 
 -- Ex 2: define the function measure that for an empty list returns -1
 -- and for other lists returns the length of the list.
 
 measure :: [String] -> Int
-measure ss = undefined
+measure [] = -1
+measure ss = length ss
 
 -- Ex 3: define the function takeFinal, which returns the n last
 -- elements of the given list.
@@ -44,7 +46,10 @@ measure ss = undefined
 -- If the list is shorter than n, return all elements.
 
 takeFinal :: Int -> [Int] -> [Int]
-takeFinal n xs = undefined
+takeFinal n xs
+  | length xs <= n = xs
+  | otherwise      = takeFinal n (tail xs)
+--takeFinal n xs = undefined
 
 -- Ex 4: remove the nth element of the given list. More precisely,
 -- return a list that is identical to the given list except the nth
@@ -59,7 +64,8 @@ takeFinal n xs = undefined
 -- The [a] in the type signature means "a list of any type"
 
 remove :: Int -> [a] -> [a]
-remove i xs = undefined
+remove i xs = (take i xs) ++ (drop (i + 1) xs)
+--remove i xs = undefined
 
 -- Ex 5: substring i n s should return the length n substring of s
 -- starting at index i.
@@ -67,7 +73,8 @@ remove i xs = undefined
 -- Remember that strings are lists!
 
 substring :: Int -> Int -> String -> String
-substring i n s = undefined
+substring i n s = (take n (drop i s))
+--substring i n s = undefined
 
 -- Ex 6: implement the function mymax that takes as argument a
 -- measuring function (of type a -> Int) and two values (of type a).
@@ -83,7 +90,10 @@ substring i n s = undefined
 --  mymax head   [1,2,3] [4,5]  ==>  [4,5]
 
 mymax :: (a -> Int) -> a -> a -> a
-mymax measure a b = undefined
+mymax measure a b =
+  case compare (measure a) (measure b) of
+    GT -> a
+    _  -> b
 
 -- Ex 7: countPalindromes receives a list of strings and returns a
 -- count of how many of the strings are palindromes (i.e. how many
@@ -92,7 +102,9 @@ mymax measure a b = undefined
 -- Remember the functions length, filter and reverse
 
 countPalindromes :: [String] -> Int
-countPalindromes ss = undefined
+countPalindromes ss = length (filter pred ss)
+  where
+    pred s = s == reverse s
 
 -- Ex 8: Implement a function funny, that
 --  - takes in a list of strings
@@ -110,7 +122,7 @@ countPalindromes ss = undefined
 --  funny ["boing","functional","foo","haskell"] ==> "FUNCTIONAL HASKELL"
 
 funny :: [String] -> String
-funny strings = undefined
+funny = intercalate " " . map (map toUpper) . filter (\s -> length s > 5)
 
 -- Ex 9: powers k max should return all the powers of k that are less
 -- than or equal to max. For example:
@@ -124,7 +136,8 @@ funny strings = undefined
 --   * the function takeWhile
 
 powers :: Int -> Int -> [Int]
-powers n max = undefined
+powers k max = takeWhile (\x -> x <= max) (map (\x -> k^x) [0..])
+--powers n max = undefined
 
 -- Ex 10: implement a search function that takes an updating function,
 -- a checking function and an initial value. Search should repeatedly
@@ -145,20 +158,30 @@ powers n max = undefined
 --     ==> Avvt
 
 search :: (a->a) -> (a->Bool) -> a -> a
-search update check initial = undefined
+search update check initial
+  | check initial = initial
+  | otherwise     = search update check (update initial)
+--search update check initial = undefined
 
 -- Ex 11: given numbers n and k, build the list of numbers n,n+1..k.
 -- Use recursion and the : operator to build the list.
 
 fromTo :: Int -> Int -> [Int]
-fromTo n k = undefined
+fromTo n k
+  | n > k    = []
+  | otherwise = n : fromTo (n + 1) k
+--fromTo n k = undefined
 
 -- Ex 12: given i, build the list of sums [1, 1+2, 1+2+3, .., 1+2+..+i]
 --
 -- Ps. you'll probably need a recursive helper function
 
 sums :: Int -> [Int]
-sums i = undefined
+sums i = sums' i 1 1
+  where
+    sums' lim i acc
+      | lim == i  = [acc]
+      | otherwise = acc : sums' lim (i + 1) (acc + i + 1)
 
 -- Ex 13: using list pattern matching and recursion, define a function
 -- mylast that returns the last value of the given list. For an empty
@@ -169,14 +192,19 @@ sums i = undefined
 --   mylast 0 [1,2,3] ==> 3
 
 mylast :: a -> [a] -> a
-mylast def xs = undefined
+mylast def []   = def
+mylast _ (x:[]) = x
+mylast _ (_:xs) = mylast undefined xs
+--mylast def xs = undefined
 
 -- Ex 14: define a function that checks if the given list is in
 -- increasing order. Use recursion and pattern matching. Don't use any
 -- library list functions.
 
 sorted :: [Int] -> Bool
-sorted xs = undefined
+sorted []       = True
+sorted [a]      = True
+sorted (a:b:xs) = a <= b && sorted (b : xs)
 
 -- Ex 15: compute the partial sums of the given list like this:
 --
@@ -185,7 +213,10 @@ sorted xs = undefined
 --   sumsOf []       ==>  []
 
 sumsOf :: [Int] -> [Int]
-sumsOf xs = undefined
+sumsOf xs = sumsOf' xs 0
+  where
+    sumsOf' [] _        = []
+    sumsOf' (x:xs) acc  = (x + acc) : sumsOf' xs (x + acc)
 
 -- Ex 16: implement the function merge that merges two sorted lists of
 -- Ints into a sorted list
@@ -198,7 +229,10 @@ sumsOf xs = undefined
 --   merge [1,1,6] [1,2]   ==> [1,1,1,2,6]
 
 merge :: [Int] -> [Int] -> [Int]
-merge xs ys = undefined
+merge xs []         = xs
+merge [] ys         = ys
+merge (x:xs) (y:ys) = if x < y then x : merge xs (y : ys)
+                               else y : merge (x : xs) ys
 
 -- Ex 17: using the merge function you just defined, implement mergesort
 --
@@ -215,7 +249,10 @@ merge xs ys = undefined
 mergesort :: [Int] -> [Int]
 mergesort [] = []
 mergesort [x] = [x]
-mergesort xs = undefined
+mergesort xs = merge (mergesort h0) (mergesort h1)
+  where halfLength = div (length xs) 2
+        h0 = take halfLength xs
+        h1 = drop halfLength xs
 
 -- Ex 18: define the function mymaximum that takes a list and a
 -- comparing function of type a -> a -> Ordering and returns the
@@ -234,7 +271,13 @@ mergesort xs = undefined
 --     ==> 0
 
 mymaximum :: (a -> a -> Ordering) -> a -> [a] -> a
-mymaximum cmp def xs = undefined
+mymaximum _ def [] = def
+mymaximum cmp def (x:xs) = mymaximum' cmp def x xs
+  where
+    mymaximum' cmp def cur [] = cur
+    mymaximum' cmp def cur (x:xs)
+      | cmp cur x == LT = mymaximum' cmp def x xs
+      | otherwise       = mymaximum' cmp def cur xs
 
 -- Ex 19: define a version of map that takes a two-argument function
 -- and two lists. Example:
@@ -246,7 +289,10 @@ mymaximum cmp def xs = undefined
 -- name.
 
 map2 :: (a -> b -> c) -> [a] -> [b] -> [c]
-map2 f as bs = undefined
+map2 _ _ [] = []
+map2 _ [] _ = []
+map2 f (a:as) (b:bs) = (f a b) : map2 f as bs
+--map2 f as bs = undefined
 
 -- Ex 20: in this exercise you get to implement an interpreter for a
 -- simple language. You should keep track of the x and y coordinates,
@@ -279,4 +325,16 @@ map2 f as bs = undefined
 -- your interpreter correctly but weirdly :(
 
 interpreter :: [String] -> [String]
-interpreter commands = undefined
+interpreter commands = interpreter' commands [] 0 0
+  where
+    interpreter' [] output _ _ = output
+    interpreter' (command:commands) output x y =
+      case command of
+        "up"      -> interpreter' commands output x (y + 1)
+        "down"    -> interpreter' commands output x (y - 1)
+        "left"    -> interpreter' commands output (x - 1) y
+        "right"   -> interpreter' commands output (x + 1) y
+        "printX"  -> interpreter' commands (output ++ [show x]) x y
+        "printY"  -> interpreter' commands (output ++ [show y]) x y
+
+--interpreter commands = undefined
