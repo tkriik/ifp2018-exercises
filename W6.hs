@@ -42,18 +42,28 @@ readNames s =
 -- (NB! There are obviously other corner cases like the inputs " " and
 -- "a b c", but you don't need to worry about those here)
 split :: String -> Maybe (String,String)
-split s = undefined
+split s = let initial = takeWhile (/= ' ') s
+              rest = dropWhile (/= ' ') s
+           in case rest of
+                "" -> Nothing
+                " " -> Nothing
+                (' ':rest') -> Just (initial, rest')
 
 -- checkDuplacate should take a pair of two strings and return Nothing
 -- if they are the same. Otherwise the strings are returned.
 checkDuplicate :: (String, String) -> Maybe (String, String)
-checkDuplicate (for,sur) = undefined
+checkDuplicate (for,sur) = if for == sur then Nothing else Just (for, sur)
 
 -- checkCapitals should take a pair of two strings and return them
 -- unchanged if both start with a capital letter. Otherwise Nothing is
 -- returned.
 checkCapitals :: (String, String) -> Maybe (String, String)
-checkCapitals (for,sur) = undefined
+checkCapitals (for,sur) =
+  let firstFor = head for
+      firstSur = head sur
+   in if (isUpper firstFor) && (isUpper firstSur)
+         then Just (for, sur)
+         else Nothing
 
 ------------------------------------------------------------------------------
 -- Ex 2: implement a function myDrop that works just like drop, but
@@ -77,7 +87,12 @@ checkCapitals (for,sur) = undefined
 --    ==> Nothing
 
 myDrop :: Maybe Int -> Maybe [a] -> Maybe [a]
-myDrop mi ml = undefined
+myDrop mi ml = do
+  n <- mi
+  xs <- ml
+  if (n >= 0 && n <= (length xs))
+     then (return $ drop n xs)
+     else Nothing
 
 ------------------------------------------------------------------------------
 -- Ex 3: given a list of values and a list of indices, return the sum
@@ -96,8 +111,20 @@ myDrop mi ml = undefined
 --  selectSum [2,7,5,3,9] [0,2,5]
 --    Nothing
 
+safeIndex :: [a] -> Int -> Maybe a
+safeIndex xs i
+  | inRange xs i  = Just (xs!!i)
+  | otherwise     = Nothing
+  where
+    inRange xs i = let len = length xs
+                    in 0 <= i && i < len
+
 selectSum :: Num a => [a] -> [Int] -> Maybe a
-selectSum xs is = undefined
+selectSum _ [] = Just 0
+selectSum xs (i:is) = do
+  x <- safeIndex xs i
+  sum <- selectSum xs is
+  return $ x + sum
 
 ------------------------------------------------------------------------------
 -- Ex 4: below you'll find the Logger monad from the lectures.
@@ -140,8 +167,20 @@ msg :: String -> Logger ()
 msg s = Logger [s] ()
 
 -- Implement this:
+--   B(n,0) = 1
+--   B(0,k) = 0, when k>0
+--   B(n,k) = B(n-1,k-1) + B(n-1,k)
+binomStr :: Integer -> Integer -> String
+binomStr n k = "B(" ++ show n ++ "," ++ show k ++ ")"
+
 binom :: Integer -> Integer -> Logger Integer
-binom n k = undefined
+binom n 0 = msg (binomStr n 0) >> return 1
+binom n k
+  | n == 0 && 0 < k = msg (binomStr n k) >> return 0
+  | otherwise       = do a <- binom (n - 1) (k - 1)
+                         b <- binom (n - 1) k
+                         msg (binomStr n k)
+                         return $ a + b
 
 ------------------------------------------------------------------------------
 -- Ex 5: using the State monad, write the operation update that first
@@ -153,7 +192,10 @@ binom n k = undefined
 --    ==> ((),7)
 
 update :: State Int ()
-update = undefined
+update = do
+  x <- get
+  let x' = x * 2 + 1
+  put x'
 
 ------------------------------------------------------------------------------
 -- Ex 6: using the State monad, walk through a list and add up all the
@@ -185,7 +227,13 @@ lengthAndSum xs = undefined
 -- PS. Order of the list in the state doesn't matter
 
 oddUpdate :: Eq a => a -> State [a] ()
-oddUpdate x = undefined
+oddUpdate x = do
+  xs <- get
+  if elem x xs
+     then do
+       put (delete x xs)
+     else do
+       put (x:xs)
 
 ------------------------------------------------------------------------------
 -- Ex 8: Define the operation oddsOp, so that the function odds
