@@ -21,7 +21,8 @@ import Control.Monad.Trans.State
 --   countRange 1 3 [1,2,3,4,5] ==> 3
 
 countRange :: Int -> Int -> [Int] -> Int
-countRange low high is = undefined
+countRange low high = length . filter inRange
+  where inRange i = low <= i && i <= high
 
 ------------------------------------------------------------------------------
 -- Ex 2: Build a string that looks like an n*m chessboard:
@@ -39,7 +40,11 @@ countRange low high is = undefined
 -- in GHCi
 
 chess :: Int -> Int -> String
-chess = undefined
+chess n m =
+  let oddRow = take m (cycle "#.")
+      evenRow = take m (cycle ".#")
+      rows = cycle [oddRow, evenRow]
+   in unlines (take n rows)
 
 ------------------------------------------------------------------------------
 -- Ex 3: Implement the function palindromify that chops a character
@@ -53,7 +58,12 @@ chess = undefined
 --   palindromify "abracacabra" ==> "acaca"
 
 palindromify :: String -> String
-palindromify = undefined
+palindromify "" = ""
+palindromify s =
+  let isPalindrome s' = s' == reverse s'
+   in if isPalindrome s
+         then s
+         else palindromify (init (tail s))
 
 ------------------------------------------------------------------------------
 -- Ex 4: Remove all repetitions of elements in a list. That is, if an
@@ -71,7 +81,11 @@ palindromify = undefined
 --   unrepeat [1,1,2,1,3,3,3] => [1,2,1,3]
 
 unrepeat :: Eq a => [a] -> [a]
-unrepeat = undefined
+unrepeat [] = []
+unrepeat [x] = [x]
+unrepeat (x0:x1:xs)
+  | x0 == x1  = unrepeat (x1:xs)
+  | otherwise = x0 : unrepeat (x1:xs)
 
 ------------------------------------------------------------------------------
 -- Ex 5: Given a list of Either String Int, sum all the integers.
@@ -82,7 +96,14 @@ unrepeat = undefined
 --   sumEithers [Left "fail", Right 1, Left "xxx", Right 2] ==> Just 3
 
 sumEithers :: [Either String Int] -> Maybe Int
-sumEithers = undefined
+sumEithers eithers =
+  let isRight (Right _) = True
+      isRight (Left _) = False
+      getRight (Right x) = x
+      rights = filter isRight eithers
+   in if null rights
+         then Nothing
+         else Just $ sum (map getRight rights)
 
 ------------------------------------------------------------------------------
 -- Ex 6: Define the data structure Shape with values that can be
@@ -99,17 +120,19 @@ sumEithers = undefined
 --
 -- All dimensions should be Doubles.
 
-data Shape = Undefined
+data Shape = Circle Double
+           | Rectangle Double Double
   deriving Show -- leave this line in place
 
 circle :: Double -> Shape
-circle = undefined
+circle radius = Circle radius
 
 rectangle :: Double -> Double -> Shape
-rectangle = undefined
+rectangle width height = Rectangle width height
 
 area :: Shape -> Double
-area = undefined
+area (Circle radius) = (radius^2) * pi
+area (Rectangle width height) = width * height
 
 ------------------------------------------------------------------------------
 -- Ex 7: Here's a Card type for a deck of cards with just two suits
@@ -128,10 +151,17 @@ data Card = Heart Int | Spade Int | Joker
   deriving Show
 
 instance Eq Card where
-  a == b = undefined -- implement me!
+  (Heart x) == (Heart y) = x == y
+  (Spade x) == (Spade y) = x == y
+  Joker == Joker = True
+  _ == _ = False
 
 instance Ord Card where
-  -- implement me!
+  compare Joker _ = GT
+  compare (Heart _) (Spade _) = GT
+  compare (Heart x) (Heart y) = compare x y
+  compare (Spade x) (Spade y) = compare x y
+  compare _ _ = LT
 
 ------------------------------------------------------------------------------
 -- Ex 8: Here's a type Twos for things that always come in pairs. It's
@@ -144,7 +174,8 @@ data Twos a = End a a | Continue a a (Twos a)
   deriving (Show, Eq)
 
 instance Functor Twos where
-  -- implement me!
+  fmap f (End x y) = End (f x) (f y)
+  fmap f (Continue x y rest) = Continue (f x) (f y) (fmap f rest)
 
 ------------------------------------------------------------------------------
 -- Ex 9: Use the state monad to update the state with the sum of the
@@ -156,7 +187,9 @@ instance Functor Twos where
 --   6
 
 step :: Int -> State Int ()
-step = undefined
+step x
+  | even x    = modify (+ x) 
+  | otherwise = return ()
 
 sumEvens :: [Int] -> State Int ()
 sumEvens is = forM_ is step
